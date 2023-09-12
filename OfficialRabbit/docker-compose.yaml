@@ -1,0 +1,36 @@
+version: "3"
+services:
+  kumo_rabbit:
+    image: rabbitmq:3.12.1
+    hostname: kumo_official_rabbit
+    container_name: kumo_official_rabbit_1
+    ports:
+      - 5672:5672
+      - 15672:15672
+    environment:
+      - RABBITMQ_DEFAULT_USER=kumo_user
+      - RABBITMQ_DEFAULT_PASS=kumo_password
+    # volumes:
+    #   - ./database_dir:/var/lib/rabbitmq
+    # command: > 
+    #   sh -c "
+    #     rabbitmqctl add_user kumo_user kumo_password &&  
+    #     rabbitmqctl set_user_tags kumo_user administrator &&
+    #     rabbitmqctl set_permissions -p / kumo_user ".*" ".*" ".*" 
+    #   "
+
+  # kumo_rabbit_server:
+  #   depends_on:
+  #     - kumo_rabbit
+  #   image: kumo_rabbit_server
+  #   container_name: kumo_rabbit_server_1
+  #   build:
+  #     context: ./
+  #   command: >
+  #     bash -c "sleep  10s &&  node ./send.js"
+  #   # ports:
+  #   #   - 3001:3001
+  #   # env_file: .env
+  #   volumes:
+  #     - ./:/usr/app
+  #     - ./node_modules:/usr/app/node_modules
