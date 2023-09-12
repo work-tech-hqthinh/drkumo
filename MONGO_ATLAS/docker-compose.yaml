@@ -1,0 +1,29 @@
+version: "3"
+services:
+  db_mongo:
+    image: mongo:7.0.0
+    container_name: kumo_db_mongo_1
+    ports:
+      - 27017:27017
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: example
+      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
+    volumes:
+      - ./server/persistent_storage:/data/db
+
+  server:
+    depends_on:
+    - db_mongo
+    image: kumo_server
+    container_name: kumo_server_1
+    build:
+      context: ./server
+    command: >
+      bash -c "yarn dev"
+    ports:
+      - 3001:3001
+    env_file: .env
+    volumes:
+      - ./server:/usr/app
+      - ./server/node_modules:/usr/app/node_modules
