@@ -37,10 +37,13 @@ const exit = async () => {
   await channel.close();
   process.exit(1);
 };
+
+const CLIENT_ID = (Math.random() * 100).toFixed(0);
+
 async function testing(numberOfTime = 10, interval = 1000) {
   let count = 0;
   const _interval = setInterval(async () => {
-    push(`[${count + 1}]`);
+    push(CLIENT_ID);
     if (++count === numberOfTime) {
       clearInterval(_interval);
       await exit();

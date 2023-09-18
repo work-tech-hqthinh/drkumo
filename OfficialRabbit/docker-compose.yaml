@@ -4,6 +4,7 @@ services:
     image: rabbitmq:3.12.1
     hostname: kumo_official_rabbit
     container_name: kumo_official_rabbit_1
+    read_only: true
     ports:
       - 5672:5672
       - 15672:15672
@@ -14,6 +15,22 @@ services:
     volumes:
       - ./database_dir:/var/lib/rabbitmq
       - ./rabbitmq:/etc/rabbitmq
+      - official_rabbit:/var/lib/rabbitmq
+  # mpc_db:
+  #   image: postgres:14
+  #   container_name: kumo_mpc_db
+  #   ports:
+  #     - 5432:5432
+  #   environment:
+  #     POSTGRES_DB: kumo_mpc_db
+  #     POSTGRES_USER: kumo_mpc_db
+  #     POSTGRES_PASSWORD: kumo_mpc_db
+  #   volumes:
+  #     - offical_rabbit:/etc
+volumes:
+  official_rabbit:
+    driver: local
+
     # command: > 
     #   sh -c "
     #     rabbitmqctl add_user kumo_user kumo_password &&  

@@ -16,7 +16,7 @@ const randomId = (Math.random() * 100).toFixed(0);
 channel.consume(RPC.rpcQueue, (msg) => {
   console.log(`[x] RECEIVE ${msg.content.toString()}`);
 
-  const replyMessage = `PROCESS BY [${randomId}]`;
+  const replyMessage = `PROCESS BY [${randomId}] - FROM [${msg.content.toString()}]`;
 
   channel.sendToQueue(msg.properties.replyTo, Buffer.from(replyMessage), {
     correlationId: msg.properties.correlationId,
