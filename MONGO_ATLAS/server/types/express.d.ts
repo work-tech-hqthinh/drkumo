@@ -10,4 +10,9 @@ declare global {
       dockerClient: MongoClient
     }
   }
+  namespace NodeJS {
+    interface ProcessEnv {
+      ATLAS_PASSWORD: string;
+    }
+  }
 }

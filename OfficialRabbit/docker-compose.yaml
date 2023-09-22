@@ -4,7 +4,6 @@ services:
     image: rabbitmq:3.12.1
     hostname: kumo_official_rabbit
     container_name: kumo_official_rabbit_1
-    read_only: true
     ports:
       - 5672:5672
       - 15672:15672

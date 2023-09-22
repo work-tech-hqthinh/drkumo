@@ -5,7 +5,11 @@ import process from "node:process";
 import { queueName, durableQueue } from "../configure.js";
 
 // "amqp://kumo_user:kumo_password@localhost:5672"
-const connection = await connect(connectionObject);
+let connection = await connect(connectionObject);
+
+connection.on("connect", () => {
+  console.table({ a: `[CONNECT]: hello` });
+});
 
 const channel = await connection.createChannel();
 
