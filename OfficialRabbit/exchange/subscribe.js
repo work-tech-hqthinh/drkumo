@@ -9,6 +9,8 @@ let count = 0;
 // "amqp://kumo_user:kumo_password@localhost:5672"
 const connection = await connect(connectionObject);
 
+
+
 const channel = await connection.createChannel();
 
 const msg = "Hello RabbitMQ";

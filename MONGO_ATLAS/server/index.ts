@@ -2,8 +2,7 @@ import express, { Express, Request, Response } from 'express'
 import dotenv from 'dotenv'
 import { MongoClient, ServerApiVersion, ObjectId } from 'mongodb'
 
-const PASSWORD = '6NpuCIOU3sre6riO'
-
+const PASSWORD = process.env.ATLAS_PASSWORD;
 const uri = `mongodb+srv://myAtlasDBUser:${PASSWORD}@myatlasclusteredu.znzyn3f.mongodb.net/?retryWrites=true&w=majority`
 const dockerMongoUri = `mongodb://db_mongo:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.10.6`
 
