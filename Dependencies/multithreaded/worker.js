@@ -1,7 +1,6 @@
 const { parentPort } = require("worker_threads");
 
 parentPort.on("message", (jobs) => {
-    console.log(1);
   work(jobs);
   parentPort.postMessage('done');
   process.exit(1);
