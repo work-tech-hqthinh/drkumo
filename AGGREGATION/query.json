@@ -1,0 +1,353 @@
+[
+  {
+    "$match": {
+      "companyId": "16010842"
+    }
+  },
+  {
+    "$addFields": {
+      "fullName": {
+        "$concat": [
+          {
+            "$toLower": "$surName"
+          },
+          " ",
+          {
+            "$toLower": "$givenName"
+          },
+          " ",
+          {
+            "$toLower": "$middleName"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "$addFields": {
+      "icn": {
+        "$arrayElemAt": [
+          {
+            "$filter": {
+              "as": "identifier",
+              "cond": {
+                "$eq": ["$$identifier.type", "ICN"]
+              },
+              "input": "$identifiers"
+            }
+          },
+          0
+        ]
+      },
+      "npi": {
+        "$arrayElemAt": [
+          {
+            "$filter": {
+              "as": "identifier",
+              "cond": {
+                "$eq": ["$$identifier.type", "NPI"]
+              },
+              "input": "$identifiers"
+            }
+          },
+          0
+        ]
+      },
+      "fin": {
+        "$arrayElemAt": [
+          {
+            "$filter": {
+              "as": "identifier",
+              "cond": {
+                "$eq": ["$$identifier.type", "FIN"]
+              },
+              "input": "$identifiers"
+            }
+          },
+          0
+        ]
+      },
+      "pid": {
+        "$arrayElemAt": [
+          {
+            "$filter": {
+              "as": "identifier",
+              "cond": {
+                "$eq": ["$$identifier.type", "PID"]
+              },
+              "input": "$identifiers"
+            }
+          },
+          0
+        ]
+      }
+    }
+  },
+  {
+    "$addFields": {
+      "icn": "$icn.value",
+      "npi": "$npi.value",
+      "fin": "$fin.value",
+      "pid": "$pid.value"
+    }
+  },
+  {
+    "$lookup": {
+      "from": "rpm_user",
+      "localField": "createdBy",
+      "foreignField": "userId",
+      "as": "creator"
+    }
+  },
+  {
+    "$addFields": {
+      "createdByName": {
+        "$arrayElemAt": ["$creator", 0]
+      }
+    }
+  },
+  {
+    "$addFields": {
+      "createdByName": "$createdByName.fullName"
+    }
+  },
+  {
+    "$project": {
+      "creator": 0
+    }
+  },
+  {
+    "$lookup": {
+      "from": "rpm_patient_device",
+      "let": {
+        "userId": "$userId"
+      },
+      "pipeline": [
+        {
+          "$match": {
+            "$expr": {
+              "$eq": ["$userId", "$$userId"]
+            }
+          }
+        },
+        {
+          "$sort": {
+            "createdAt": 1
+          }
+        }
+      ],
+      "as": "medicalDevices"
+    }
+  },
+  {
+    "$lookup": {
+      "from": "rpm_patient_assignment",
+      "let": {
+        "patientId": "$userId"
+      },
+      "pipeline": [
+        {
+          "$match": {
+            "$expr": {
+              "$and": [
+                {
+                  "$eq": ["$patientId", "$$patientId"]
+                },
+                {
+                  "$eq": [
+                    {
+                      "$ifNull": ["$deletedAt", null]
+                    },
+                    null
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "as": "ccList"
+    }
+  },
+  {
+    "$lookup": {
+      "from": "rpm_user",
+      "localField": "ccList.staffId",
+      "foreignField": "userId",
+      "as": "ccInfo"
+    }
+  },
+  {
+    "$addFields": {
+      "ccMerge": {
+        "$map": {
+          "input": "$ccList",
+          "as": "cc",
+          "in": {
+            "$mergeObjects": [
+              "$$cc",
+              {
+                "$arrayElemAt": [
+                  {
+                    "$filter": {
+                      "input": "$ccInfo",
+                      "cond": {
+                        "$eq": ["$$this.userId", "$$cc.staffId"]
+                      }
+                    }
+                  },
+                  0
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "$addFields": {
+      "primaryCC": {
+        "$arrayElemAt": [
+          {
+            "$filter": {
+              "input": "$ccMerge",
+              "as": "cc",
+              "cond": {
+                "$eq": ["$$cc.isPrimary", true]
+              }
+            }
+          },
+          0
+        ]
+      },
+      "secondaryCC": {
+        "$filter": {
+          "input": "$ccMerge",
+          "as": "cc",
+          "cond": {
+            "$eq": ["$$cc.isPrimary", false]
+          }
+        }
+      }
+    }
+  },
+  {
+    "$lookup": {
+      "from": "rpm_user",
+      "localField": "clinician",
+      "foreignField": "userId",
+      "as": "clinician"
+    }
+  },
+  {
+    "$addFields": {
+      "clinician": {
+        "$arrayElemAt": ["$clinician", 0]
+      }
+    }
+  },
+  {
+    "$lookup": {
+      "from": "rpm_company",
+      "localField": "companyId",
+      "foreignField": "companyId",
+      "as": "company"
+    }
+  },
+  {
+    "$addFields": {
+      "company": {
+        "$arrayElemAt": ["$company", 0]
+      }
+    }
+  },
+  {
+    "$lookup": {
+      "from": "rpm_patient_insurance",
+      "localField": "userId",
+      "foreignField": "userId",
+      "as": "insurances"
+    }
+  },
+  {
+    "$lookup": {
+      "from": "rpm_patient_device",
+      "localField": "userId",
+      "foreignField": "userId",
+      "as": "medicalDevices"
+    }
+  },
+  {
+    "$lookup": {
+      "from": "rpm_company_facility",
+      "localField": "facilityId",
+      "foreignField": "facilityId",
+      "as": "facility"
+    }
+  },
+  {
+    "$addFields": {
+      "facility": {
+        "$arrayElemAt": ["$facility", 0]
+      }
+    }
+  },
+  {
+    "$match": {
+      "companyId": "16010842",
+      "isStaff": false
+    }
+  },
+  {
+    "$addFields": {
+      "id": "$userId"
+    }
+  },
+  {
+    "$project": {
+      "ccList": 0,
+      "ccInfo": 0,
+      "ccMerge": 0
+    }
+  },
+  {
+    "$lookup": {
+      "from": "auth_login_history",
+      "let": {
+        "userId": "$userId"
+      },
+      "pipeline": [
+        {
+          "$match": {
+            "$expr": {
+              "$eq": ["$userId", "$$userId"]
+            }
+          }
+        },
+        {
+          "$sort": {
+            "createdAt": -1
+          }
+        },
+        {
+          "$limit": 1
+        }
+      ],
+      "as": "lastLogin"
+    }
+  },
+  {
+    "$unwind": {
+      "path": "$lastLogin",
+      "preserveNullAndEmptyArrays": true
+    }
+  },
+  {
+    "$addFields": {
+      "lastLogin": {
+        "$ifNull": ["$lastLogin.createdAt", null]
+      }
+    }
+  }
+]
