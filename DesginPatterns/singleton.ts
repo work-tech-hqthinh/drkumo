@@ -3,6 +3,9 @@ process.on('exit', () => {
     console.log(`TOOK [${((performance.now() - tick) / 1000).toFixed(3)}] seconds to execute`);
 })
 
+/** @@REFEFENCE TO RECURSIVE PROMISE CHAIN
+ * https://stackoverflow.com/questions/29020722/recursive-promise-in-javascript
+ */
 
 const tick = performance.now();
 interface ILDAP {
@@ -11,6 +14,8 @@ interface ILDAP {
     bind(): void;
     // getInstance: () => LDAP;
 }
+
+type AcceptedResolve = 'continue' | 'success';
 
 class LDAP implements ILDAP {
     public isConnected: boolean = false;
@@ -30,26 +35,9 @@ class LDAP implements ILDAP {
         this.connectWithRetry();
     }
 
-    // retryRecursive(myResolve?: any): Promise<string> {
-    //     return new Promise((resolve, reject) => {
-    //         setTimeout(() => {
-    //             if (++this.curRetries <= this.maxRetries) {
-    //                 console.log(`curRetries: [${this.curRetries}] - Time: ${((performance.now() - tick) / 1000).toFixed(3)}`);
-    //                 return Promise.resolve().then(this.retryRecursive.bind(this, resolve));
-    //             }
-    //             else {
-    //                 console.log("DONE");
 
-    //                 resolve('done2');
-    //                 return myResolve('done');
-    //             }
-    //         }, this.minSecRequired)
-
-    //     });
-    // }
-
-    retryRecursive(): Promise<string> {
-        return new Promise((resolve, reject) => {
+    retryRecursive(): Promise<AcceptedResolve> {
+        return new Promise<AcceptedResolve>((resolve, reject) => {
             setTimeout(() => {
                 if (++this.curRetries <= this.maxRetries) {
                     console.log(`curRetries: [${this.curRetries}] - Time: ${((performance.now() - tick) / 1000).toFixed(3)}`);
@@ -60,13 +48,12 @@ class LDAP implements ILDAP {
                 }
             }, this.minSecRequired)
 
-        }).then((result) => {
+        }).then<AcceptedResolve>((result) => {
+
             if (result === 'continue') {
                 return this.retryRecursive();
-            } else if (result === 'success') {
-                return 'success';
             }
-            return 'unknown';
+            return 'success';
         })
     };
 
@@ -79,12 +66,7 @@ class LDAP implements ILDAP {
 
 
         this.retryRecursive().then(result => {
-            console.log(`result is ${result}`);
-            if (result == 'success') {
-                clearTimeout(exitTimeoutId);
-                console.log('--- CONNECTED ---');
-            };
-            console.log(`RESULT IS ${result}`);
+            if (result == 'success') clearTimeout(exitTimeoutId);
         }).catch(e => {
             console.log(`PROBLEM: ${e}`);
         })
@@ -97,9 +79,7 @@ class LDAP implements ILDAP {
             process.exit(1);
         }, this.maxSecRequired);
 
-        console.log('--- CONNECTING ---');
         setTimeout(() => {
-            console.log('--- CONNECTED ---');
             clearTimeout(timeoutId);
         }, this.minSecRequired);
     }
@@ -115,29 +95,3 @@ class LDAP implements ILDAP {
 }
 
 LDAP.getInstance();
-
-console.log('----------  IAM NOT AFFECTED  ---------- ');
-
-// function getRedirectUrl(url, redirectCount) {
-//     redirectCount = redirectCount || 0;
-
-//     if (redirectCount > 10) {
-//         throw new Error("Redirected too many times.");
-//     }
-
-//     return new Promise(function (resolve) {
-//         var xhr = new XMLHttpRequest();
-
-//         xhr.onload = function () {
-//             resolve(getRedirectsTo(xhr));
-//         };
-
-//         xhr.open('HEAD', url, true);
-//         xhr.send();
-//     })
-//         .then(function (redirectsTo) {
-//             return redirectsTo
-//                 ? getRedirectUrl(redirectsTo, redirectCount + 1)
-//                 : url;
-//         });
-// }
