@@ -16,7 +16,7 @@ interface ILDAP {
 }
 
 type AcceptedResolve = 'continue' | 'success';
-
+type MaxTryReached = 'max retries reached';
 class LDAP implements ILDAP {
     public isConnected: boolean = false;
 
@@ -36,27 +36,41 @@ class LDAP implements ILDAP {
     }
 
 
-    retryRecursive(): Promise<AcceptedResolve> {
+    retryRecursive(): Promise<Exclude<AcceptedResolve, 'continue'> | MaxTryReached> {
         return new Promise<AcceptedResolve>((resolve, reject) => {
-            setTimeout(() => {
-                if (++this.curRetries <= this.maxRetries) {
-                    console.log(`curRetries: [${this.curRetries}] - Time: ${((performance.now() - tick) / 1000).toFixed(3)}`);
-                    resolve('continue');
 
-                } else {
-                    resolve('success');
+            setTimeout(() => {
+                try {
+                    if (++this.curRetries <= this.maxRetries) {
+                        console.log(`curRetries: [${this.curRetries}] - Time: ${((performance.now() - tick) / 1000).toFixed(3)}`);
+                        throw new Error('error');
+                        resolve('continue');
+
+                    } else if (this.curRetries > this.maxRetries) {
+                        reject('max retries reached');
+                    }
+                } catch (e) {
+                    console.log("I CAUGHT IT ")
+                    resolve('continue');
                 }
+
             }, this.minSecRequired)
 
-        }).then<AcceptedResolve>((result) => {
-
+        }).then((result) => {
             if (result === 'continue') {
                 return this.retryRecursive();
             }
             return 'success';
+        }).catch(e => {
+            console.log('`ENTER', e.message);
+            if (e instanceof Error) {
+                console.log(`EEEEE`, e.message);
+            }
+            if (e === 'max retries reached')
+                console.log(`[KILLED]: Due to max retries reached`);
+            return Promise.resolve('max retries reached');
         })
     };
-
 
     connectWithRetry(): void {
         const exitTimeoutId = setTimeout(() => {
@@ -67,6 +81,8 @@ class LDAP implements ILDAP {
 
         this.retryRecursive().then(result => {
             if (result == 'success') clearTimeout(exitTimeoutId);
+
+            console.log(`FINAL: ${result}`)
         }).catch(e => {
             console.log(`PROBLEM: ${e}`);
         })
