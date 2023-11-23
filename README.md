@@ -1,4 +1,4 @@
-# drkumo
+# playground2023
 
 1. Atlas
   Playground to practice syntax & trying queries in MongoDB using the Cloud Service Provider Atlas
